@@ -1,0 +1,14 @@
+{
+  "name": "@ai-task-scheduler/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "hono": "4.13.13",
+    "@modelcontextprotocol/sdk": "1.31.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2"
+  }
+}

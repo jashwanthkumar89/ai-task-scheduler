@@ -1,0 +1,17 @@
+{
+  "name": "ai-task-scheduler",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "bun --watch run server/src/index.ts",
+    "dev:web": "bun --cwd web run dev",
+    "build:web": "bun --cwd web run build",
+    "start": "bun run server/src/index.ts",
+    "install-launchagent": "bun run build:web && bun run launchagent/install.ts",
+    "uninstall-launchagent": "bun run launchagent/uninstall.ts"
+  }
+}

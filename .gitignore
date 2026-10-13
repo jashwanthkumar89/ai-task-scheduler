@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+
+# runtime data - never commit the database or secrets
+server/data/*.sqlite
+server/data/*.sqlite-*
+server/data/*.log
+server/data/logs/
+server/data/screenshots/
+server/data/downloads/
+server/data/chrome-profile-spectrum/
+scripts/secrets/
+scripts/venv/
+
+# local env
+.env
+.env.*
+!.env.example

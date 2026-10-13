@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.aitaskscheduler.server</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__BUN_PATH__</string>
+    <string>run</string>
+    <string>__PROJECT_DIR__/server/src/index.ts</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__PROJECT_DIR__</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__PATH_ENV__</string>
+    <key>HOME</key>
+    <string>__HOME_DIR__</string>
+    <key>PORT</key>
+    <string>4273</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__PROJECT_DIR__/server/data/launchagent.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__PROJECT_DIR__/server/data/launchagent.err.log</string>
+</dict>
+</plist>

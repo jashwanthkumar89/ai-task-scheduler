@@ -12,6 +12,7 @@ export interface Task {
 
   prompt: string | null;
   model: string | null;
+  auto_approve: boolean;
 
   script_path: string | null;
   script_args: string[];
@@ -38,6 +39,7 @@ export interface Run {
   output: string | null;
   error_message: string | null;
   screenshot_path: string | null;
+  note_file: string | null;
   run_input_tokens: number | null;
   run_output_tokens: number | null;
   run_cache_read_tokens: number | null;
@@ -77,12 +79,47 @@ export const api = {
   updateSettings: (patch: Record<string, string>) =>
     request<Record<string, string>>("/settings", { method: "PATCH", body: JSON.stringify(patch) }),
 
+  testNtfy: () => request<{ ok: boolean }>("/settings/test-ntfy", { method: "POST" }),
+
+  listNotes: () =>
+    request<{ file: string; date: string; time: string | null; title: string }[]>("/notes"),
+  getNote: (file: string) => request<{ file: string; content: string }>(`/notes/${file}`),
+  saveNote: (file: string, content: string) =>
+    request<{ ok: true }>(`/notes/${file}`, { method: "PUT", body: JSON.stringify({ content }) }),
+
+  getPrs: () =>
+    request<{
+      mine: { repo: string; number: number; title: string; url: string; draft: boolean; updatedAt: string; author: string; reviewDecision: string | null }[];
+      reviewRequested: { repo: string; number: number; title: string; url: string; draft: boolean; updatedAt: string; author: string; reviewDecision: string | null }[];
+    }>("/prs"),
+  listPrReviews: () =>
+    request<
+      {
+        repo: string;
+        number: number;
+        title: string | null;
+        url: string | null;
+        status: "running" | "success" | "failed" | "timeout";
+        started_at: string;
+        finished_at: string | null;
+        output: string | null;
+        error_message: string | null;
+        note_file: string | null;
+      }[]
+    >("/prs/reviews"),
+  reviewPr: (pr: { repo: string; number: number; title: string; url: string }) =>
+    request<{ ok: true; dir: string }>("/prs/review", {
+      method: "POST",
+      body: JSON.stringify(pr),
+    }),
+
   getUsage: () =>
     request<{
       monthToDate: { inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheCreationTokens: number; totalTokens: number };
       perTask: { task_id: string; task_name: string; run_count: number; billable_tokens: number; cache_tokens: number }[];
       perProject: { project: string; billableTokens: number; cacheTokens: number }[];
       perModel: { model: string; billableTokens: number; cacheTokens: number; costUsd: number }[];
+      perDay: { day: string; billableTokens: number }[];
       spendUsd: number;
       recentRuns: { id: string; task_id: string; started_at: string; model_used: string; billable_tokens: number; cache_tokens: number }[];
     }>("/usage"),

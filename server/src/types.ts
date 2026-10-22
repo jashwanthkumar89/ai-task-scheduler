@@ -11,6 +11,7 @@ export interface Task {
 
   prompt: string | null;
   model: string | null;
+  auto_approve: 0 | 1;
 
   script_path: string | null;
   script_args: string | null; // JSON
@@ -41,6 +42,7 @@ export interface Run {
   output: string | null;
   error_message: string | null;
   screenshot_path: string | null;
+  note_file: string | null;
 
   run_input_tokens: number | null;
   run_output_tokens: number | null;

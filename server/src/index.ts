@@ -6,8 +6,17 @@ import { tasksRouter } from "./routes/tasks";
 import { runsRouter } from "./routes/runs";
 import { settingsRouter } from "./routes/settings";
 import { usageRouter } from "./routes/usage";
+import { notesRouter } from "./routes/notes";
+import { prsRouter } from "./routes/prs";
 import { startScheduler } from "./scheduler";
-import "./db"; // ensure schema is created before anything else runs
+import { db } from "./db"; // ensure schema is created before anything else runs
+
+// Any row still "running" at boot is an orphan - its child process died with
+// the previous server instance.
+db.query("UPDATE runs SET status = 'failed', finished_at = ?, error_message = ? WHERE status = 'running'")
+  .run(new Date().toISOString(), "Server restarted mid-run");
+db.query("UPDATE pr_reviews SET status = 'failed', finished_at = ?, error_message = ? WHERE status = 'running'")
+  .run(new Date().toISOString(), "Server restarted mid-review; retry from the PRs tab");
 
 const app = new Hono();
 
@@ -15,6 +24,8 @@ app.route("/api/tasks", tasksRouter);
 app.route("/api/runs", runsRouter);
 app.route("/api/settings", settingsRouter);
 app.route("/api/usage", usageRouter);
+app.route("/api/notes", notesRouter);
+app.route("/api/prs", prsRouter);
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 

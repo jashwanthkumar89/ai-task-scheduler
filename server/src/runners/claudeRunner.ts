@@ -13,6 +13,8 @@ export interface ClaudeRunResult {
   success: boolean;
   exitCode: number | null;
   output: string;
+  /** Human-readable final answer from claude (parsed `result` field). */
+  resultText: string | null;
   errorMessage?: string;
   timedOut: boolean;
   usage: {
@@ -28,14 +30,25 @@ export interface ClaudeRunResult {
 
 const MAX_OUTPUT_CHARS = 20_000;
 
-export async function runClaudeTask(task: Task, signal: AbortSignal, runId?: string): Promise<ClaudeRunResult> {
-  const cwd = getSetting("default_working_dir") ?? process.env.HOME ?? "/";
+export async function runClaudeTask(task: Task, signal: AbortSignal, runId?: string, cwdOverride?: string): Promise<ClaudeRunResult> {
+  const cwd = cwdOverride ?? getSetting("default_working_dir") ?? process.env.HOME ?? "/";
   const model = task.model || "sonnet";
 
   const monthlyBefore = (await getMonthToDateUsage()).totalTokens;
 
+  let extraMcp: Record<string, unknown> = {};
+  const extraMcpSetting = getSetting("claude_extra_mcp");
+  if (extraMcpSetting) {
+    try {
+      extraMcp = JSON.parse(extraMcpSetting);
+    } catch {
+      console.error("[claude] claude_extra_mcp setting is not valid JSON - ignoring");
+    }
+  }
+
   const mcpConfig = JSON.stringify({
     mcpServers: {
+      ...extraMcp,
       permgate: {
         command: process.execPath,
         args: ["run", PERMISSION_SERVER_PATH],
@@ -44,20 +57,23 @@ export async function runClaudeTask(task: Task, signal: AbortSignal, runId?: str
     },
   });
 
+  const permissionMode = task.auto_approve
+    ? "bypassPermissions"
+    : (getSetting("claude_permission_mode") ?? "acceptEdits");
+  const gated = permissionMode !== "bypassPermissions";
+
   const args = [
     "-p",
     task.prompt ?? "",
     "--model",
     model,
     "--permission-mode",
-    "acceptEdits",
+    permissionMode,
     "--output-format",
     "json",
     "--mcp-config",
     mcpConfig,
-    "--strict-mcp-config",
-    "--permission-prompt-tool",
-    "mcp__permgate__approve",
+    ...(gated ? ["--permission-prompt-tool", "mcp__permgate__approve"] : []),
   ];
 
   const result = await new Promise<ClaudeRunResult>((resolve) => {
@@ -88,11 +104,27 @@ export async function runClaudeTask(task: Task, signal: AbortSignal, runId?: str
       const monthlyAfter = (await getMonthToDateUsage()).totalTokens;
 
       let parsed: any = null;
-      try {
-        parsed = JSON.parse(stdout);
-      } catch {
-        // non-JSON output (e.g. crashed before producing a result) - fall through
+      for (const line of stdout.trim().split("\n").reverse()) {
+        if (!line.startsWith("{")) continue;
+        try {
+          const p = JSON.parse(line);
+          if (p?.type === "result") {
+            parsed = p;
+            break;
+          }
+        } catch {
+          // not JSON - keep scanning older lines
+        }
       }
+      if (!parsed) {
+        try {
+          parsed = JSON.parse(stdout);
+        } catch {
+          // no parseable result object - fall through
+        }
+      }
+
+      const resultText = typeof parsed?.result === "string" ? parsed.result : null;
 
       const usage = parsed?.usage ?? null;
       const resolvedModelId = parsed?.modelUsage ? Object.keys(parsed.modelUsage)[0] : null;
@@ -100,7 +132,8 @@ export async function runClaudeTask(task: Task, signal: AbortSignal, runId?: str
       resolve({
         success: !timedOut && exitCode === 0,
         exitCode,
-        output: (stdout || stderr).slice(-MAX_OUTPUT_CHARS),
+        output: resultText ?? (stdout || stderr).slice(-MAX_OUTPUT_CHARS),
+        resultText,
         errorMessage: timedOut ? "Timed out" : exitCode !== 0 ? stderr.slice(-2000) || "Non-zero exit" : undefined,
         timedOut,
         usage: {
@@ -122,6 +155,7 @@ export async function runClaudeTask(task: Task, signal: AbortSignal, runId?: str
         success: false,
         exitCode: null,
         output: stdout || stderr,
+        resultText: null,
         errorMessage: `Failed to spawn claude: ${err.message}`,
         timedOut: false,
         usage: { inputTokens: null, outputTokens: null, cacheReadTokens: null, cacheCreationTokens: null, modelUsed: model },

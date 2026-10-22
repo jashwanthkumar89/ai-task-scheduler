@@ -5,6 +5,8 @@ import { isTaskDue, minuteKey } from "./lib/time";
 import { notifyRunResult, notify } from "./lib/notify";
 import { runClaudeTask } from "./runners/claudeRunner";
 import { runScriptTask } from "./runners/scriptRunner";
+import { writeRunNote } from "./lib/runLog";
+import { basename } from "node:path";
 
 const TICK_MS = 30_000;
 const runningTaskIds = new Set<string>();
@@ -29,6 +31,7 @@ function insertRun(taskId: string, trigger: "schedule" | "manual"): Run {
     output: null,
     error_message: null,
     screenshot_path: null,
+    note_file: null,
     run_input_tokens: null,
     run_output_tokens: null,
     run_cache_read_tokens: null,
@@ -88,7 +91,18 @@ export async function executeTask(task: Task, trigger: "schedule" | "manual"): P
           monthly_total_tokens_before: result.monthlyTotalBefore,
           monthly_total_tokens_after: result.monthlyTotalAfter,
         });
-        notifyRunResult(task.name, result.timedOut ? "timeout" : result.success ? "success" : "failed");
+        if (result.resultText) {
+          const notePath = writeRunNote(task.name, result.resultText);
+          if (notePath) {
+            console.log(`[scheduler] note written: ${notePath}`);
+            finishRun(run.id, { note_file: basename(notePath) });
+          }
+        }
+        notifyRunResult(
+          task.name,
+          result.timedOut ? "timeout" : result.success ? "success" : "failed",
+          result.resultText ?? undefined,
+        );
       } else if (task.kind === "script") {
         const result = await runScriptTask(task, run.id, controller.signal);
         finishRun(run.id, {
@@ -99,7 +113,12 @@ export async function executeTask(task: Task, trigger: "schedule" | "manual"): P
           error_message: result.errorMessage ?? null,
           screenshot_path: result.screenshotPath,
         });
-        notifyRunResult(task.name, result.timedOut ? "timeout" : result.success ? "success" : "failed");
+        // Quiet exits ("[QUIET]" in output, e.g. a bill script finding
+        // nothing new) record as success but skip all notifications.
+        const quiet = (result.output ?? "").includes("[QUIET]");
+        if (!quiet) {
+          notifyRunResult(task.name, result.timedOut ? "timeout" : result.success ? "success" : "failed");
+        }
       }
     } finally {
       clearTimeout(timeoutHandle);
@@ -142,5 +161,8 @@ export function isTaskRunning(taskId: string): boolean {
 export function runTaskNow(taskId: string): Promise<void> {
   const task = getTask(taskId);
   if (!task) throw new Error("Task not found");
+  // Stamp the trigger marker so a manual run suppresses a missed scheduled
+  // catch-up for a due time that has already passed today.
+  db.query("UPDATE tasks SET last_triggered_minute = ? WHERE id = ?").run(minuteKey(new Date()), taskId);
   return executeTask(task, "manual");
 }

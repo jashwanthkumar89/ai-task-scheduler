@@ -11,6 +11,7 @@ function serializeTask(task: Task) {
   return {
     ...task,
     enabled: !!task.enabled,
+    auto_approve: !!task.auto_approve,
     script_args: task.script_args ? JSON.parse(task.script_args) : [],
     schedule_days_of_week: task.schedule_days_of_week ? JSON.parse(task.schedule_days_of_week) : [],
     schedule_description: describeSchedule(task),
@@ -40,11 +41,11 @@ tasksRouter.post("/", async (c) => {
   db.query(
     `INSERT INTO tasks (
       id, name, category, kind, enabled,
-      prompt, model,
+      prompt, model, auto_approve,
       script_path, script_args, secrets_file,
       schedule_type, schedule_time, schedule_days_of_week, schedule_day_of_month,
       timeout_minutes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     body.name,
@@ -53,6 +54,7 @@ tasksRouter.post("/", async (c) => {
     body.enabled === false ? 0 : 1,
     body.prompt ?? null,
     body.model ?? null,
+    body.auto_approve ? 1 : 0,
     body.script_path ?? null,
     body.script_args ? JSON.stringify(body.script_args) : null,
     body.secrets_file ?? null,
@@ -82,6 +84,7 @@ tasksRouter.patch("/:id", async (c) => {
     enabled: body.enabled !== undefined ? (body.enabled ? 1 : 0) : existing.enabled,
     prompt: body.prompt !== undefined ? body.prompt : existing.prompt,
     model: body.model !== undefined ? body.model : existing.model,
+    auto_approve: body.auto_approve !== undefined ? (body.auto_approve ? 1 : 0) : existing.auto_approve,
     script_path: body.script_path !== undefined ? body.script_path : existing.script_path,
     script_args:
       body.script_args !== undefined ? JSON.stringify(body.script_args) : existing.script_args,
@@ -113,6 +116,7 @@ tasksRouter.delete("/:id", (c) => {
   db.query("DELETE FROM tasks WHERE id = ?").run(id);
   return c.json({ ok: true });
 });
+
 
 tasksRouter.post("/:id/run", async (c) => {
   const id = c.req.param("id");

@@ -272,6 +272,60 @@ export async function getUsageByModel(since: Date, until: Date = new Date()): Pr
     .sort((a, b) => b.billableTokens - a.billableTokens);
 }
 
+export interface DayUsage {
+  day: string; // YYYY-MM-DD, local time
+  billableTokens: number;
+}
+
+/** Billable (input + output) tokens per calendar day since `since`, one pass. */
+export async function getUsageByDay(since: Date, until: Date = new Date()): Promise<DayUsage[]> {
+  const seen = new Set<string>();
+  const totals = new Map<string, number>();
+  const files = await walkJsonlFiles(PROJECTS_DIR);
+
+  for (const file of files) {
+    try {
+      const fileStat = await stat(file);
+      if (fileStat.mtime < since) continue;
+    } catch {
+      continue;
+    }
+    let content: string;
+    try {
+      content = await readFile(file, "utf8");
+    } catch {
+      continue;
+    }
+
+    for (const line of content.split("\n")) {
+      if (!line) continue;
+      let record: any;
+      try {
+        record = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (record?.type !== "assistant") continue;
+      const ts = record?.timestamp ? new Date(record.timestamp) : null;
+      if (!ts || Number.isNaN(ts.getTime()) || ts < since || ts >= until) continue;
+      const usage = record?.message?.usage;
+      if (!usage) continue;
+
+      const dedupeKey = `${record?.message?.id ?? ""}:${record?.requestId ?? ""}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+
+      const p = (n: number) => String(n).padStart(2, "0");
+      const day = `${ts.getFullYear()}-${p(ts.getMonth() + 1)}-${p(ts.getDate())}`;
+      totals.set(day, (totals.get(day) ?? 0) + (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0));
+    }
+  }
+
+  return [...totals.entries()]
+    .map(([day, billableTokens]) => ({ day, billableTokens }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+}
+
 export function startOfCurrentMonth(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);

@@ -637,10 +637,10 @@ def main() -> None:
             last_dt = statement_date(state["last_statement"])
 
         if last_dt is not None and stmt_dt is not None and stmt_dt <= last_dt:
-            print(f"No new bill. Latest statement is still: {label}")
+            print(f"[QUIET] No new bill. Latest statement is still: {label}")
             return
         if stmt_dt is None and state.get("last_statement") == label:
-            print(f"No new bill. Latest statement is still: {label}")
+            print(f"[QUIET] No new bill. Latest statement is still: {label}")
             return
 
         # New statement: open it, then click "View Printable Statement" to download.

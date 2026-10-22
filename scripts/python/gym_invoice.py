@@ -432,12 +432,12 @@ def main() -> None:
             page_text = (driver.find_element(By.TAG_NAME, "body").text or "").lower()
             if "no payment history" in page_text or "no purchase history" in page_text:
                 since = last_dt.strftime("%m/%d/%Y") if last_dt else "the last recorded payment"
-                print(f"No payments posted after {since} - nothing new.")
+                print(f"[QUIET] No payments posted after {since} - nothing new.")
             else:
                 print("Could not determine the latest payment date - skipping to be safe.")
             return
         if last_dt is not None and pay_dt <= last_dt:
-            print(f"No new payment. Latest is still: {label}")
+            print(f"[QUIET] No new payment. Latest is still: {label}")
             return
 
         print(f"New payment found: {label} - downloading receipt...", flush=True)

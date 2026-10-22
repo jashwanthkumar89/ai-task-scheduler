@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { getMonthToDateUsage, getUsageByModel, getUsageByProject, startOfCurrentMonth } from "../lib/usage";
+import { getMonthToDateUsage, getUsageByDay, getUsageByModel, getUsageByProject, startOfCurrentMonth } from "../lib/usage";
 
 export const usageRouter = new Hono();
 
 usageRouter.get("/", async (c) => {
   const monthToDate = await getMonthToDateUsage();
   const perProject = await getUsageByProject(startOfCurrentMonth());
+  const perDay = await getUsageByDay(startOfCurrentMonth());
   const perModel = await getUsageByModel(startOfCurrentMonth());
   const spendUsd = perModel.reduce((s, m) => s + m.costUsd, 0);
 
@@ -38,5 +39,5 @@ usageRouter.get("/", async (c) => {
     )
     .all();
 
-  return c.json({ monthToDate, perTask, perProject, perModel, spendUsd, recentRuns });
+  return c.json({ monthToDate, perTask, perProject, perModel, perDay, spendUsd, recentRuns });
 });

@@ -65,6 +65,20 @@ CREATE TABLE IF NOT EXISTS runs (
   monthly_total_tokens_after INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS pr_reviews (
+  repo TEXT NOT NULL,
+  number INTEGER NOT NULL,
+  title TEXT,
+  url TEXT,
+  status TEXT NOT NULL CHECK (status IN ('running', 'success', 'failed', 'timeout')),
+  started_at TEXT NOT NULL,
+  finished_at TEXT,
+  output TEXT,
+  error_message TEXT,
+  note_file TEXT,
+  PRIMARY KEY (repo, number)
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -73,6 +87,18 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE INDEX IF NOT EXISTS idx_runs_task_id ON runs(task_id);
 CREATE INDEX IF NOT EXISTS idx_runs_started_at ON runs(started_at);
 `);
+
+try {
+  db.exec("ALTER TABLE tasks ADD COLUMN auto_approve INTEGER NOT NULL DEFAULT 0");
+} catch {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE runs ADD COLUMN note_file TEXT");
+} catch {
+  // column already exists
+}
 
 export function getSetting(key: string): string | undefined {
   const row = db.query("SELECT value FROM settings WHERE key = ?").get(key) as

@@ -102,6 +102,20 @@ function RunDetail({ run }: { run: Run }) {
   const output = liveLog ?? run.output;
   return (
     <div className="run-detail">
+      {run.note_file && (
+        <p>
+          <a
+            href={`/notes?note=${encodeURIComponent(run.note_file)}`}
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState({}, "", `/notes?note=${encodeURIComponent(run.note_file!)}`);
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }}
+          >
+            View note
+          </a>
+        </p>
+      )}
       {run.error_message && <p className="error">{run.error_message}</p>}
       {run.screenshot_path && (
         <div>

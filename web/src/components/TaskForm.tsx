@@ -17,6 +17,7 @@ export interface TaskFormValue {
   kind: TaskKind;
   prompt: string;
   model: string;
+  auto_approve: boolean;
   script_path: string;
   script_args: string;
   secrets_file: string;
@@ -34,6 +35,7 @@ function defaultsFor(category: Category): TaskFormValue {
     kind: category === "work" ? "claude" : "script",
     prompt: "",
     model: "claude-sonnet-4-6",
+    auto_approve: false,
     script_path: "",
     script_args: "",
     secrets_file: "",
@@ -52,6 +54,7 @@ export function taskToFormValue(task: Task): TaskFormValue {
     kind: task.kind,
     prompt: task.prompt ?? "",
     model: task.model ?? "claude-sonnet-4-6",
+    auto_approve: task.auto_approve ?? false,
     script_path: task.script_path ?? "",
     script_args: task.script_args?.join(" ") ?? "",
     secrets_file: task.secrets_file ?? "",
@@ -70,6 +73,7 @@ export function formValueToPayload(v: TaskFormValue): Partial<Task> {
     kind: v.kind,
     prompt: v.kind === "claude" ? v.prompt : null,
     model: v.kind === "claude" ? v.model : null,
+    auto_approve: v.kind === "claude" ? v.auto_approve : false,
     script_path: v.kind === "script" ? v.script_path : null,
     script_args: v.kind === "script" ? v.script_args.split(/\s+/).filter(Boolean) : [],
     secrets_file: v.kind === "script" ? v.secrets_file : null,
@@ -162,6 +166,14 @@ export function TaskForm({
                 </option>
               ))}
             </select>
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={value.auto_approve}
+              onChange={(e) => set("auto_approve", e.target.checked)}
+            />
+            Skip permission prompts (run unsandboxed)
           </label>
         </>
       )}

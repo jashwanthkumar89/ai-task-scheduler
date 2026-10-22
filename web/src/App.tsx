@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import { TaskList } from "./components/TaskList";
 import { UsageDashboard } from "./components/UsageDashboard";
 import { SettingsPage } from "./components/SettingsPage";
+import { NotesPage } from "./components/NotesPage";
+import { PrsPage } from "./components/PrsPage";
 
-type View = "work" | "personal" | "usage" | "settings";
+type View = "work" | "personal" | "usage" | "notes" | "prs" | "settings";
 
 const PATHS: Record<View, string> = {
   work: "/",
   personal: "/personal",
   usage: "/usage",
+  notes: "/notes",
+  prs: "/prs",
   settings: "/settings",
 };
 
@@ -50,6 +54,12 @@ export default function App() {
         <button className={view === "usage" ? "nav-item active" : "nav-item"} onClick={() => go("usage")}>
           Token usage
         </button>
+        <button className={view === "notes" ? "nav-item active" : "nav-item"} onClick={() => go("notes")}>
+          Notes
+        </button>
+        <button className={view === "prs" ? "nav-item active" : "nav-item"} onClick={() => go("prs")}>
+          Pull requests
+        </button>
         <button
           className={view === "settings" ? "nav-item active" : "nav-item"}
           onClick={() => go("settings")}
@@ -61,6 +71,8 @@ export default function App() {
         {view === "work" && <TaskList category="work" />}
         {view === "personal" && <TaskList category="personal" />}
         {view === "usage" && <UsageDashboard />}
+        {view === "notes" && <NotesPage />}
+        {view === "prs" && <PrsPage />}
         {view === "settings" && <SettingsPage />}
       </main>
     </div>

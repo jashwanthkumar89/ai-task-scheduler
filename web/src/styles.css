@@ -44,6 +44,16 @@ body {
   max-width: 920px;
 }
 
+/* Notes takes the whole pane, no 920px cap */
+.content:has(.notes-page) {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 .task-list-header {
   display: flex;
   justify-content: space-between;
@@ -148,3 +158,55 @@ button:disabled { opacity: 0.5; cursor: default; }
 .run-screenshot { max-width: 100%; max-height: 480px; border: 1px solid #333; border-radius: 6px; margin-top: 4px; }
 .usage-progress { height: 6px; background: #e2e4ea; border-radius: 3px; margin: 8px 0 4px; overflow: hidden; }
 .usage-progress-fill { height: 100%; background: #4a7dff; border-radius: 3px; transition: width .3s; }
+
+/* Notes page */
+.notes-page { display: flex; gap: 24px; flex: 1; min-height: 0; }
+.notes-list { width: 260px; flex-shrink: 0; overflow-y: auto; }
+.note-group { margin-bottom: 16px; }
+.note-date { font-size: 12px; color: #8b93a3; margin-bottom: 4px; font-weight: 600; }
+.note-item { display: block; width: 100%; text-align: left; background: none; border: none; color: #d7dae0; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; text-transform: capitalize; }
+.note-item:hover { background: #262a35; }
+.note-item.active { background: #2f3645; }
+.note-view { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.note-actions { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.note-content { background: #1c1e26; color: #d7dae0; padding: 16px; border-radius: 8px; white-space: pre-wrap; overflow: auto; flex: 1; font-size: 13px; line-height: 1.5; margin: 0; }
+.note-editor { flex: 1; background: #1c1e26; color: #d7dae0; border: 1px solid #2f3645; border-radius: 8px; padding: 16px; font-family: inherit; font-size: 13px; line-height: 1.5; resize: none; }
+.checkbox-label { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+
+/* Rendered markdown inside notes */
+.markdown h1 { font-size: 20px; margin: 16px 0 8px; }
+.markdown h2 { font-size: 17px; margin: 14px 0 6px; }
+.markdown h3 { font-size: 15px; margin: 12px 0 4px; }
+.markdown h4 { font-size: 14px; margin: 10px 0 4px; }
+.markdown p { margin: 6px 0; }
+.markdown strong { color: #fff; }
+.markdown ul, .markdown ol { margin: 6px 0; padding-left: 22px; }
+.markdown li { margin: 3px 0; }
+.markdown table { border-collapse: collapse; margin: 10px 0; width: 100%; font-size: 12.5px; }
+.markdown th, .markdown td { border: 1px solid #2f3645; padding: 5px 9px; text-align: left; }
+.markdown th { background: #262a35; color: #fff; }
+.markdown code { background: #262a35; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.markdown pre code { display: block; padding: 10px; overflow-x: auto; }
+.markdown blockquote { border-left: 3px solid #2f3645; margin: 8px 0; padding: 2px 12px; color: #8b93a3; }
+.markdown hr { border: none; border-top: 1px solid #2f3645; margin: 14px 0; }
+.markdown a { color: #7aa2f7; }
+.note-time { color: #8b93a3; font-size: 11px; margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+/* PRs page */
+.pr-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; }
+.pr-table td { padding: 6px 8px; border-bottom: 1px solid #262a35; vertical-align: top; }
+.pr-repo { color: #8b93a3; font-size: 12px; white-space: nowrap; }
+.pr-meta { color: #8b93a3; font-size: 12px; white-space: nowrap; text-align: right; }
+.pr-table a { color: #7aa2f7; text-decoration: none; }
+.pr-table a:hover { text-decoration: underline; }
+
+.usage-chart { width: 100%; max-width: 720px; height: auto; }
+.chart-grid { stroke: #e2e4ea; stroke-width: 1; }
+.chart-bar { fill: #3b4bd8; }
+.chart-bar:hover { fill: #7aa2f7; }
+.chart-label { fill: #777; font-size: 10px; }
+.chart-bar.hovered { fill: #7aa2f7; }
+.chart-tooltip { fill: #1c1e26; opacity: 0.95; }
+.chart-tooltip-label { fill: #cdd1e0; font-size: 10px; }
+.chart-tooltip-label.strong { fill: #fff; font-weight: 600; font-size: 11px; }
+.note-section { font-size: 15px; font-weight: 700; margin: 14px 0 4px; }
